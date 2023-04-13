@@ -13,9 +13,9 @@ public class ServoClient
     {
 
         _serialPort = new SerialPort(ComName);
-        _serialPort.BaudRate = 19200;
+        _serialPort.BaudRate = 115200;
         _serialPort.DataBits = 8;
-        _serialPort.Parity = Parity.Even;
+        _serialPort.Parity = Parity.None;
         _serialPort.StopBits = StopBits.One;
         _serialPort.Open();
         _serialPort.DiscardInBuffer();
@@ -66,6 +66,12 @@ public class ServoClient
     {
 
         await modbusSerialMaster.WriteMultipleRegistersAsync(slaveAddress, (0x31 << 8) + 0x4, new ushort[] {1});
+    }
+
+    public async Task SetEnable(bool val)
+    {
+        await WriteToServoAsync(0x03, 10, new ushort[] {1});
+        await WriteToServoAsync(0x03, 11, new ushort[] { (ushort)(val ? 1 : 0) });
     }
 
     public async Task WriteToServoAsync(byte h1, byte h2, params ushort[] data)
