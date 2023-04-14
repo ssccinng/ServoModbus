@@ -2,8 +2,28 @@
 using NModbus.Logging;
 using NModbus.Serial;
 using System.IO.Ports;
+using System.Runtime.CompilerServices;
 
 namespace ServoModbus;
+
+public class StringLogger : ModbusLogger
+{
+    public Action<string> LogAction { get; set; }
+    private static readonly string BlankHeader = Environment.NewLine + new string(' ', 15);
+    public StringLogger(LoggingLevel minimumLoggingLevel) : base(minimumLoggingLevel)
+    {
+    }
+
+    protected override void LogCore(LoggingLevel level, string message)
+    {
+        message = message?.Replace(Environment.NewLine, BlankHeader);
+        DefaultInterpolatedStringHandler defaultInterpolatedStringHandler = new DefaultInterpolatedStringHandler(2, 1);
+        defaultInterpolatedStringHandler.AppendLiteral("[");
+        defaultInterpolatedStringHandler.AppendFormatted(level);
+        defaultInterpolatedStringHandler.AppendLiteral("]");
+        LogAction?.Invoke(defaultInterpolatedStringHandler.ToStringAndClear().PadRight(15) + message);
+    }
+}
 public class ServoClient
 {
 
@@ -18,7 +38,8 @@ public class ServoClient
         _serialPort.DataBits = 8;
         _serialPort.Parity = Parity.None;
         _serialPort.StopBits = StopBits.One;
-        
+        factory = new ModbusFactory(logger: new StringLogger(LoggingLevel.Debug));
+
     }
 
     public void Connect()
@@ -28,7 +49,6 @@ public class ServoClient
         _serialPort.DiscardOutBuffer();
         _serialPort.WriteTimeout = 500;
         _serialPort.ReadTimeout = 500;
-        var factory = new ModbusFactory(logger: new ConsoleModbusLogger(LoggingLevel.Trace));
         //factory.Logger.
         _modbusSerialMaster = factory.CreateRtuMaster(_serialPort);
     }
@@ -80,6 +100,8 @@ public class ServoClient
     /// 移动结束事件
     /// </summary>
     public Action OnMoveEnd;
+    private ModbusFactory factory;
+
     public async Task SetDO(int idx, bool val)
     {
 
