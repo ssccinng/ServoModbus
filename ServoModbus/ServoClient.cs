@@ -141,5 +141,10 @@ public class ServoClient
         await _modbusSerialMaster.WriteMultipleRegistersAsync(slaveAddress, (ushort)((h1 << 8) + h2), data);
 
     }
+    public async Task<ushort[]> ReadServoAsync(byte h1, byte h2, ushort length)
+    {
+        return await _modbusSerialMaster.ReadHoldingRegistersAsync(slaveAddress, (ushort)((h1 << 8) + h2), length);
+    }
+    
 
 }
