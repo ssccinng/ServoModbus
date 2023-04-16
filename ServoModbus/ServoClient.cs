@@ -1,6 +1,7 @@
 ﻿using NModbus;
 using NModbus.Logging;
 using NModbus.Serial;
+using System.Diagnostics;
 using System.IO.Ports;
 using System.Runtime.CompilerServices;
 
@@ -42,15 +43,26 @@ public class ServoClient
 
     }
 
-    public void Connect()
+    public bool Connect()
     {
-        _serialPort.Open();
-        _serialPort.DiscardInBuffer();
-        _serialPort.DiscardOutBuffer();
-        _serialPort.WriteTimeout = 500;
-        _serialPort.ReadTimeout = 500;
-        //factory.Logger.
-        _modbusSerialMaster = factory.CreateRtuMaster(_serialPort);
+        try
+        {
+            _serialPort.Open();
+            _serialPort.DiscardInBuffer();
+            _serialPort.DiscardOutBuffer();
+            _serialPort.WriteTimeout = 500;
+            _serialPort.ReadTimeout = 500;
+            //factory.Logger.
+            _modbusSerialMaster = factory.CreateRtuMaster(_serialPort);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            //Debug
+            return false;
+
+        }
+
     }
     public void DisConnect()
     {
@@ -64,6 +76,7 @@ public class ServoClient
     /// <returns></returns>
     public async Task Init()
     {
+        return;
         await WriteToServoAsync(0x02, 00, 1);
         await WriteToServoAsync(0x03, 08, 0);
         await WriteToServoAsync(0x03, 10, 0);
