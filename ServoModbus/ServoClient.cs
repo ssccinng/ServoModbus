@@ -58,7 +58,7 @@ public class ServoClient
         }
         catch (Exception ex)
         {
-            //Debug
+            Debug.WriteLine(ex.Message);
             return false;
 
         }
