@@ -28,25 +28,28 @@ public class StringLogger : ModbusLogger
 public class ServoClient
 {
 
+    public bool IsEnable { get; set; }
+    public bool IsConnect { get; set; }
+
     private SerialPort _serialPort;
     private IModbusSerialMaster _modbusSerialMaster;
-    byte slaveAddress = 0;
-    public ServoClient(string ComName, byte slaveAddress = 0)
+    byte _slaveAddress = 0;
+    public ServoClient()
     {
-
-        _serialPort = new SerialPort(ComName);
-        _serialPort.BaudRate = 115200;
-        _serialPort.DataBits = 8;
-        _serialPort.Parity = Parity.None;
-        _serialPort.StopBits = StopBits.One;
-        factory = new ModbusFactory(logger: new StringLogger(LoggingLevel.Debug));
-
     }
 
-    public bool Connect()
+    public bool Connect(string ComName, byte slaveAddress = 0)
     {
         try
         {
+            _slaveAddress = slaveAddress;
+            _serialPort = new SerialPort(ComName);
+            _serialPort.BaudRate = 115200;
+            _serialPort.DataBits = 8;
+            _serialPort.Parity = Parity.None;
+            _serialPort.StopBits = StopBits.One;
+            logger = new StringLogger(LoggingLevel.Debug);
+            factory = new ModbusFactory(logger: logger);
             _serialPort.Open();
             _serialPort.DiscardInBuffer();
             _serialPort.DiscardOutBuffer();
@@ -54,11 +57,14 @@ public class ServoClient
             _serialPort.ReadTimeout = 500;
             //factory.Logger.
             _modbusSerialMaster = factory.CreateRtuMaster(_serialPort);
+
+
             return true;
         }
         catch (Exception ex)
         {
-            Debug.WriteLine(ex.Message);
+            //Debug.WriteLine(ex.Message);
+            logger.Error(ex.Message);
             return false;
 
         }
@@ -68,6 +74,7 @@ public class ServoClient
     {
         _modbusSerialMaster.Dispose();
         _serialPort.Close();
+        _serialPort.Dispose();
 
     }
     /// <summary>
@@ -113,12 +120,15 @@ public class ServoClient
     /// 移动结束事件
     /// </summary>
     public Action OnMoveEnd;
+
+    public StringLogger logger { get; private set; }
+
     private ModbusFactory factory;
 
     public async Task SetDO(int idx, bool val)
     {
 
-        await _modbusSerialMaster.WriteMultipleRegistersAsync(slaveAddress, (0x31 << 8) + 0x4, new ushort[] {1});
+        await _modbusSerialMaster.WriteMultipleRegistersAsync(_slaveAddress, (0x31 << 8) + 0x4, new ushort[] {1});
     }
     /// <summary>
     /// 设置di
@@ -129,7 +139,7 @@ public class ServoClient
     public async Task SetDI(int idx, bool val)
     {
 
-        await _modbusSerialMaster.WriteMultipleRegistersAsync(slaveAddress, (0x31 << 8) + 0x4, new ushort[] { 1 });
+        await _modbusSerialMaster.WriteMultipleRegistersAsync(_slaveAddress, (0x31 << 8) + 0x4, new ushort[] { 1 });
     }
     /// <summary>
     /// 设置使能
@@ -138,8 +148,10 @@ public class ServoClient
     /// <returns></returns>
     public async Task SetEnableAsync(bool val)
     {
+
         await WriteToServoAsync(0x03, 10, new ushort[] {1});
         await WriteToServoAsync(0x03, 11, new ushort[] { (ushort)(val ? 1 : 0) });
+        IsEnable = val;
     }
     public async Task SetTargetAsync(byte idx, byte pos, TargetInfo targetInfo)
     {
@@ -173,12 +185,20 @@ public class ServoClient
 
     public async Task WriteToServoAsync(byte h1, byte h2, params ushort[] data)
     {
-        await _modbusSerialMaster.WriteMultipleRegistersAsync(slaveAddress, (ushort)((h1 << 8) + h2), data);
+        try
+        {
+            await _modbusSerialMaster.WriteMultipleRegistersAsync(_slaveAddress, (ushort)((h1 << 8) + h2), data);
+        }
+        catch (Exception ex)
+        {
+            logger.Error(ex.Message);
+            logger.Error(ex.StackTrace);
+        }
 
     }
     public async Task<ushort[]> ReadServoAsync(byte h1, byte h2, ushort length)
     {
-        return await _modbusSerialMaster.ReadHoldingRegistersAsync(slaveAddress, (ushort)((h1 << 8) + h2), length);
+        return await _modbusSerialMaster.ReadHoldingRegistersAsync(_slaveAddress, (ushort)((h1 << 8) + h2), length);
     }
     
 
