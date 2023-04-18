@@ -31,91 +31,113 @@ public class ServoClient
     public bool IsEnable { get; set; }
     public bool IsConnect { get; set; }
 
-    protected SerialPort _serialPort;
+    protected SerialPort _serialPort = new();
     protected IModbusSerialMaster _modbusSerialMaster;
     protected byte _slaveAddress = 0;
     public ServoClient()
     {
     }
 
+    public virtual void Init()
+    {
+        _serialPort.BaudRate = 115200;
+        _serialPort.DataBits = 8;
+        _serialPort.Parity = Parity.None;
+        _serialPort.StopBits = StopBits.One;
+    }
+
+    public void LogTo(Action<string> action, LoggingLevel loggingLevel = LoggingLevel.Debug)
+    {
+        logger = new StringLogger(loggingLevel) { LogAction = action };
+
+    }
+    /// <summary>
+    /// 设定DI功能（需重启plc）
+    /// </summary>
+    /// <param name="idx"></param>
+    /// <param name="dIFuncType"></param>
+    /// <param name="high"></param>
+    public async void SetVDIAsync(int idx, DIFuncType dIFuncType, bool high = true)
+    {
+        await WriteToServoAsync(0x17, (byte)(idx * 2), (ushort)dIFuncType);
+        await WriteToServoAsync(0x17, (byte)((idx * 2) + 1), (ushort)(high ? 1 : 0));
+    }
+    public async void SetVDOAsync(int idx, DIFuncType dIFuncType, bool high = true)
+    {
+        await WriteToServoAsync(0x17, (byte)(idx * 2), (ushort)dIFuncType);
+        await WriteToServoAsync(0x17, (byte)((idx * 2) + 1), (ushort)(high ? 1 : 0));
+    }
     public virtual bool Connect(string ComName, byte slaveAddress = 0)
     {
         try
         {
             _slaveAddress = slaveAddress;
-            _serialPort = new SerialPort(ComName);
-            _serialPort.BaudRate = 115200;
-            _serialPort.DataBits = 8;
-            _serialPort.Parity = Parity.None;
-            _serialPort.StopBits = StopBits.One;
-            logger = new StringLogger(LoggingLevel.Debug);
+            _serialPort.PortName = ComName;
             factory = new ModbusFactory(logger: logger);
             _serialPort.Open();
             _serialPort.DiscardInBuffer();
             _serialPort.DiscardOutBuffer();
             _serialPort.WriteTimeout = 500;
             _serialPort.ReadTimeout = 500;
-            //factory.Logger.
             _modbusSerialMaster = factory.CreateRtuMaster(_serialPort);
-
-
-            return true;
+            return IsConnect = true;
         }
         catch (Exception ex)
         {
+            
             //Debug.WriteLine(ex.Message);
             logger.Error(ex.Message);
-            return false;
+            return IsConnect = false;
 
         }
 
     }
     public void DisConnect()
     {
+        IsConnect = false;
         _modbusSerialMaster.Dispose();
         _serialPort.Close();
         _serialPort.Dispose();
-
     }
     /// <summary>
     /// 初始化
     /// </summary>
     /// <returns></returns>
-    public async Task Init()
-    {
-        return;
-        await WriteToServoAsync(0x02, 00, 1);
-        await WriteToServoAsync(0x03, 08, 0);
-        await WriteToServoAsync(0x03, 10, 0);
-        await WriteToServoAsync(0x05, 00, 2);
-        await WriteToServoAsync(0x05, 30, 1);
+    //public async Task Init()
+    //{
+    //    return;
+    //    await WriteToServoAsync(0x02, 00, 1);
+    //    await WriteToServoAsync(0x03, 08, 0);
+    //    await WriteToServoAsync(0x03, 10, 0);
+    //    await WriteToServoAsync(0x05, 00, 2);
+    //    await WriteToServoAsync(0x05, 30, 1);
 
-        await WriteToServoAsync(0x05, 31, 1);
-        await WriteToServoAsync(0x05, 32, 1);
+    //    await WriteToServoAsync(0x05, 31, 1);
+    //    await WriteToServoAsync(0x05, 32, 1);
         
-        await WriteToServoAsync(0x0c, 09, 1);
-        await WriteToServoAsync(0x0c, 13, 1);
-        await WriteToServoAsync(0x0c, 15, 0);
+    //    await WriteToServoAsync(0x0c, 09, 1);
+    //    await WriteToServoAsync(0x0c, 13, 1);
+    //    await WriteToServoAsync(0x0c, 15, 0);
 
-        await WriteToServoAsync(0x11, 00, 1);
-        await WriteToServoAsync(0x11, 01, 1);
-        await WriteToServoAsync(0x11, 04, 1);
-        await WriteToServoAsync(0x11, 05, 1);
-        await WriteToServoAsync(0x11, 16, 0);
+    //    await WriteToServoAsync(0x11, 00, 1);
+    //    await WriteToServoAsync(0x11, 01, 1);
+    //    await WriteToServoAsync(0x11, 04, 1);
+    //    await WriteToServoAsync(0x11, 05, 1);
+    //    await WriteToServoAsync(0x11, 16, 0);
 
-        await WriteToServoAsync(0x17, 00, 1);
-        await WriteToServoAsync(0x17, 02, 18);
-        await WriteToServoAsync(0x17, 04, 19);
-        await WriteToServoAsync(0x17, 06, 28);
-        await WriteToServoAsync(0x17, 08, 32);
-        await WriteToServoAsync(0x17, 10, 34);
-        await WriteToServoAsync(0x17, 12, 2);
+    //    await WriteToServoAsync(0x17, 00, 1);
+    //    await WriteToServoAsync(0x17, 02, 18);
+    //    await WriteToServoAsync(0x17, 04, 19);
+    //    await WriteToServoAsync(0x17, 06, 28);
+    //    await WriteToServoAsync(0x17, 08, 32);
+    //    await WriteToServoAsync(0x17, 10, 34);
+    //    await WriteToServoAsync(0x17, 12, 2);
 
 
-        //await WriteToServoAsync(0x0c, 00, 1);
-        //await WriteToServoAsync(0x0c, 08, 115200);
+    //    //await WriteToServoAsync(0x0c, 00, 1);
+    //    //await WriteToServoAsync(0x0c, 08, 115200);
 
-    }
+    //}
     /// <summary>
     /// 移动结束事件
     /// </summary>
