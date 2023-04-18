@@ -31,14 +31,14 @@ public class ServoClient
     public bool IsEnable { get; set; }
     public bool IsConnect { get; set; }
 
-    private SerialPort _serialPort;
-    private IModbusSerialMaster _modbusSerialMaster;
-    byte _slaveAddress = 0;
+    protected SerialPort _serialPort;
+    protected IModbusSerialMaster _modbusSerialMaster;
+    protected byte _slaveAddress = 0;
     public ServoClient()
     {
     }
 
-    public bool Connect(string ComName, byte slaveAddress = 0)
+    public virtual bool Connect(string ComName, byte slaveAddress = 0)
     {
         try
         {
@@ -121,9 +121,9 @@ public class ServoClient
     /// </summary>
     public Action OnMoveEnd;
 
-    public StringLogger logger { get; private set; }
+    public StringLogger logger { get; protected set; }
 
-    private ModbusFactory factory;
+    protected ModbusFactory factory;
 
     public async Task SetDO(int idx, bool val)
     {
@@ -200,6 +200,19 @@ public class ServoClient
     {
         return await _modbusSerialMaster.ReadHoldingRegistersAsync(_slaveAddress, (ushort)((h1 << 8) + h2), length);
     }
-    
 
+    public void StopMove()
+    {
+        throw new NotImplementedException();
+    }
+
+    public void PosMove()
+    {
+        throw new NotImplementedException();
+    }
+
+    public void NagMove()
+    {
+        throw new NotImplementedException();
+    }
 }
