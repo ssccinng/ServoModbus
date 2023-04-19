@@ -34,6 +34,9 @@ public class ServoClient
     protected SerialPort _serialPort = new();
     protected IModbusSerialMaster _modbusSerialMaster;
     protected byte _slaveAddress = 0;
+
+    public Dictionary<DIFuncType, int> DIFunTable { get; set; } = new();
+    public Dictionary<DIFuncType, int> DOFunTable { get; set; } = new();
     public ServoClient()
     {
     }
@@ -59,11 +62,13 @@ public class ServoClient
     /// <param name="high"></param>
     public async Task SetVDIAsync(int idx, DIFuncType dIFuncType, bool high = false)
     {
+        DIFunTable.TryAdd(dIFuncType, 0);
         await WriteToServoAsync(0x17, (byte)(idx * 2), (ushort)dIFuncType);
         await WriteToServoAsync(0x17, (byte)((idx * 2) + 1), (ushort)(high ? 1 : 0));
     }
     public async Task SetVDOAsync(int idx, DIFuncType dIFuncType, bool high = false)
     {
+        DOFunTable.TryAdd(dIFuncType, 0);
         await WriteToServoAsync(0x17, (byte)(idx * 2), (ushort)dIFuncType);
         await WriteToServoAsync(0x17, (byte)((idx * 2) + 1), (ushort)(high ? 1 : 0));
     }
@@ -71,23 +76,29 @@ public class ServoClient
     /// 没时间构思了 先用hset试一试
     /// </summary>
     public HashSet<DIFuncType> dIFuncTypes = new HashSet<DIFuncType>();
-    public async Task AddVDI(DIFuncType dIFuncType)
+    public async Task AddVDI(params DIFuncType[] dIFuncType)
     {
         int aa = 0;
-        dIFuncTypes.Add(dIFuncType);
-        foreach (var item in dIFuncTypes)
+        foreach (var item in dIFuncType)
         {
-            aa |= (1 << GetFuncIdx(item));
+            DIFunTable[item] = 1;
+        }
+        foreach (var item in DIFunTable.Keys)
+        {
+            aa |= (DIFunTable[item] << GetFuncIdx(item));
         }
         await WriteToServoAsync(0x31, 0, (ushort)aa);
     }
-    public async Task RemoveVDI(DIFuncType dIFuncType)
+    public async Task RemoveVDI(params DIFuncType[] dIFuncType)
     {
         int aa = 0;
-        dIFuncTypes.Remove(dIFuncType);
-        foreach (var item in dIFuncTypes)
+        foreach (var item in dIFuncType)
         {
-            aa |= (1 << GetFuncIdx(item));
+            DIFunTable[item] = 0;
+        }
+        foreach (var item in DIFunTable.Keys)
+        {
+            aa |= (DIFunTable[item] << GetFuncIdx(item));
         }
         await WriteToServoAsync(0x31, 0, (ushort)aa);
     }
@@ -95,10 +106,9 @@ public class ServoClient
 
     public int GetFuncIdx(DIFuncType dIFuncType)
     {
-        if (dIFuncType == DIFuncType.伺服使能) return 0;
-        if (dIFuncType == DIFuncType.正向点动) return 1;
-        if (dIFuncType == DIFuncType.反向点动) return 2;
-        return 0;
+        var res = DIFunTable.TryGetValue(dIFuncType, out var idx);
+        if (res == false) return -1;
+        return idx;
     }
 
     public virtual bool Connect(string ComName, byte slaveAddress = 0)
@@ -234,20 +244,27 @@ public class ServoClient
         await WriteToServoAsync(0x03, 11, new ushort[] { (ushort)(val ? 1 : 0) });
         IsEnable = val;
     }
-    public async Task SetTargetAsync(byte idx, byte pos, TargetInfo targetInfo)
+    // 设置目标
+    public async Task SetTargetAsync(byte idx, ushort pos, TargetInfo targetInfo)
     {
-        await WriteToServoAsync(11, (byte)((idx + 1) * 10), targetInfo.StartSpeed,
+        await WriteToServoAsync(11, (byte)(idx * 7 + 10), targetInfo.StartSpeed,
                                                 targetInfo.StopSpeed, pos, targetInfo.MaxSpeed, targetInfo.MaxAccTime, 0);
     }
     // 让移动轴移动到指定位置
     public async Task MoveToAsync(int target)
     {
-        if (target >= 16)
+        List<DIFuncType> list = new List<DIFuncType> { DIFuncType.多段位置指令使能 };
+        for (int i = 0; i < 4; i++)
         {
-            throw new ArgumentException("参数不可大于16");
+            if ((target & (1 << i)) != 0)
+            {
+                list.Add(DIFuncType.多段位置指令使能 + i + 1);
+            }
         }
+        await AddVDI(list.ToArray());
 
     }
+    
 
     /// <summary>
     /// 归原
@@ -305,8 +322,8 @@ public class ServoClient
 
     public async Task StopMove()
     {
-        await RemoveVDI(DIFuncType.正向点动);
-        await RemoveVDI(DIFuncType.反向点动);
+        await RemoveVDI(DIFuncType.正向点动, DIFuncType.反向点动);
+        //await RemoveVDI();
     }
 
     public async Task PosMove()
