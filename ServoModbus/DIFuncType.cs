@@ -78,3 +78,13 @@ public enum DOFuncType
     允许写入下段指令,
     内部运动完成,
 }
+
+
+public enum MultiMoveMode
+{
+    单次运行结束停机 = 0,
+    循环运行 = 1,
+    DI切换运行 = 2,
+    顺序运行 = 3,
+    轴控连续运行 = 5,
+}

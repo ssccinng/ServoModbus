@@ -15,6 +15,9 @@ public class VDITable
 public class VDIInfo
 {
     public DIFuncType DIFuncType { get; set; }
+    /// <summary>
+    /// 是否高电平有效
+    /// </summary>
     public int High { get; set; }
 }
 
@@ -25,6 +28,9 @@ public class VDOTable
 public class VDOInfo
 {
     public DOFuncType DOFuncType { get; set; }
+    /// <summary>
+    /// 是否高电平有效
+    /// </summary>
     public int High { get; set; }
 
 }
