@@ -262,7 +262,7 @@ public class ServoClient
     }
 
     // 设置目标
-    public async Task SetTargetAsync(byte idx, ushort pos, TargetInfo targetInfo)
+    public async Task SetTargetAsync(byte idx, int pos, TargetInfo targetInfo)
     {
         await WriteToServoAsync(0x11, (byte)(idx * 5 + 12), 
                                                 (ushort)(pos & ((1<<16) - 1)), (ushort)(pos >> 16), 
@@ -354,6 +354,16 @@ public class ServoClient
     public async Task NagMove()
     {
         await AddVDI(DIFuncType.反向点动);
+    }
+
+    public async Task SetMoveType(ServoMoveType moveType)
+    {
+        await WriteToServoAsync(0x11, 04, (ushort)moveType);
+    }
+
+    public async Task SetMultiMoveMode(MultiMoveMode multiMoveMode)
+    {
+        await WriteToServoAsync(0x11, 00, (ushort)multiMoveMode);
     }
     
 

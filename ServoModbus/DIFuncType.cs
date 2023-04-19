@@ -88,3 +88,8 @@ public enum MultiMoveMode
     顺序运行 = 3,
     轴控连续运行 = 5,
 }
+public enum ServoMoveType
+{
+    相对定位,
+    绝对定位
+}
