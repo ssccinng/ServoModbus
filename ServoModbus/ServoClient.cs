@@ -89,31 +89,31 @@ public class ServoClient
     public HashSet<DIFuncType> dIFuncTypes = new HashSet<DIFuncType>();
     public async Task AddVDI(params DIFuncType[] dIFuncType)
     {
-        int aa = 0;
         foreach (var item in dIFuncType)
         {
             DIFunTable[item].Val = 1;
         }
-        foreach (var item in DIFunTable.Keys)
-        {
-            aa |= (DIFunTable[item].Val << GetFuncIdx(item));
-        }
-        await WriteToServoAsync(0x31, 0, (ushort)aa);
+        await RefrshDI();
+
     }
     public async Task RemoveVDI(params DIFuncType[] dIFuncType)
     {
-        int aa = 0;
         foreach (var item in dIFuncType)
         {
             DIFunTable[item].Val = 0;
         }
+        await RefrshDI();
+    }
+
+    public async Task RefrshDI()
+    {
+        int aa = 0;
         foreach (var item in DIFunTable.Keys)
         {
             aa |= (DIFunTable[item].Val << GetFuncIdx(item));
         }
         await WriteToServoAsync(0x31, 0, (ushort)aa);
     }
-
 
     public int GetFuncIdx(DIFuncType dIFuncType)
     {
@@ -264,8 +264,7 @@ public class ServoClient
     // 设置目标
     public async Task SetTargetAsync(byte idx, ushort pos, TargetInfo targetInfo)
     {
-        await WriteToServoAsync(0x11, (byte)(idx * 5 + 12), targetInfo.StartSpeed,
-                                                targetInfo.StopSpeed, 
+        await WriteToServoAsync(0x11, (byte)(idx * 5 + 12), 
                                                 (ushort)(pos & ((1<<16) - 1)), (ushort)(pos >> 16), 
                                                 targetInfo.MaxSpeed, 
                                                 targetInfo.MaxAccTime, 
