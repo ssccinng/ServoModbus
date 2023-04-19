@@ -1,6 +1,7 @@
 ﻿using NModbus;
 using NModbus.Logging;
 using NModbus.Serial;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO.Ports;
 using System.Runtime.CompilerServices;
@@ -25,6 +26,17 @@ public class StringLogger : ModbusLogger
         LogAction?.Invoke(defaultInterpolatedStringHandler.ToStringAndClear().PadRight(15) + message);
     }
 }
+    public record DIInfo
+{
+    public int Idx { get; set; }    
+    public int Val { get; set; }
+
+    public DIInfo(int idx, int val)
+    {
+        Val = val;
+        Idx = idx;
+    }
+}
 public class ServoClient
 {
 
@@ -34,9 +46,8 @@ public class ServoClient
     protected SerialPort _serialPort = new();
     protected IModbusSerialMaster _modbusSerialMaster;
     protected byte _slaveAddress = 0;
-
-    public Dictionary<DIFuncType, int> DIFunTable { get; set; } = new();
-    public Dictionary<DIFuncType, int> DOFunTable { get; set; } = new();
+    public Dictionary<DIFuncType, DIInfo> DIFunTable { get; set; } = new();
+    public Dictionary<DOFuncType, int> DOFunTable { get; set; } = new();
     public ServoClient()
     {
     }
@@ -62,15 +73,15 @@ public class ServoClient
     /// <param name="high"></param>
     public async Task SetVDIAsync(int idx, DIFuncType dIFuncType, bool high = false)
     {
-        DIFunTable.TryAdd(dIFuncType, 0);
+        DIFunTable.TryAdd(dIFuncType, new DIInfo(idx, 0));
         await WriteToServoAsync(0x17, (byte)(idx * 2), (ushort)dIFuncType);
         await WriteToServoAsync(0x17, (byte)((idx * 2) + 1), (ushort)(high ? 1 : 0));
     }
-    public async Task SetVDOAsync(int idx, DIFuncType dIFuncType, bool high = false)
+    public async Task SetVDOAsync(int idx, DOFuncType dIFuncType, bool high = false)
     {
         DOFunTable.TryAdd(dIFuncType, 0);
-        await WriteToServoAsync(0x17, (byte)(idx * 2), (ushort)dIFuncType);
-        await WriteToServoAsync(0x17, (byte)((idx * 2) + 1), (ushort)(high ? 1 : 0));
+        await WriteToServoAsync(0x17, (byte)(idx * 2 + 33), (ushort)dIFuncType);
+        await WriteToServoAsync(0x17, (byte)((idx * 2) + 34), (ushort)(high ? 1 : 0));
     }
     /// <summary>
     /// 没时间构思了 先用hset试一试
@@ -81,11 +92,11 @@ public class ServoClient
         int aa = 0;
         foreach (var item in dIFuncType)
         {
-            DIFunTable[item] = 1;
+            DIFunTable[item].Val = 1;
         }
         foreach (var item in DIFunTable.Keys)
         {
-            aa |= (DIFunTable[item] << GetFuncIdx(item));
+            aa |= (DIFunTable[item].Val << GetFuncIdx(item));
         }
         await WriteToServoAsync(0x31, 0, (ushort)aa);
     }
@@ -94,11 +105,11 @@ public class ServoClient
         int aa = 0;
         foreach (var item in dIFuncType)
         {
-            DIFunTable[item] = 0;
+            DIFunTable[item].Val = 0;
         }
         foreach (var item in DIFunTable.Keys)
         {
-            aa |= (DIFunTable[item] << GetFuncIdx(item));
+            aa |= (DIFunTable[item].Val << GetFuncIdx(item));
         }
         await WriteToServoAsync(0x31, 0, (ushort)aa);
     }
@@ -108,7 +119,7 @@ public class ServoClient
     {
         var res = DIFunTable.TryGetValue(dIFuncType, out var idx);
         if (res == false) return -1;
-        return idx;
+        return idx.Idx;
     }
 
     public virtual bool Connect(string ComName, byte slaveAddress = 0)
@@ -244,11 +255,21 @@ public class ServoClient
         await WriteToServoAsync(0x03, 11, new ushort[] { (ushort)(val ? 1 : 0) });
         IsEnable = val;
     }
+
+    public async Task SetMultiSpeed(ushort startSpeed, ushort stopSpeed)
+    {
+        await WriteToServoAsync(0x11, 10, startSpeed, stopSpeed);
+    }
+
     // 设置目标
     public async Task SetTargetAsync(byte idx, ushort pos, TargetInfo targetInfo)
     {
-        await WriteToServoAsync(11, (byte)(idx * 7 + 10), targetInfo.StartSpeed,
-                                                targetInfo.StopSpeed, pos, targetInfo.MaxSpeed, targetInfo.MaxAccTime, 0);
+        await WriteToServoAsync(0x11, (byte)(idx * 5 + 12), targetInfo.StartSpeed,
+                                                targetInfo.StopSpeed, 
+                                                (ushort)(pos & ((1<<16) - 1)), (ushort)(pos >> 16), 
+                                                targetInfo.MaxSpeed, 
+                                                targetInfo.MaxAccTime, 
+                                                0);
     }
     // 让移动轴移动到指定位置
     public async Task MoveToAsync(int target)
@@ -258,7 +279,7 @@ public class ServoClient
         {
             if ((target & (1 << i)) != 0)
             {
-                list.Add(DIFuncType.多段位置指令使能 + i + 1);
+                list.Add(DIFuncType.多段运行指令方向选择 + i + 1);
             }
         }
         await AddVDI(list.ToArray());
