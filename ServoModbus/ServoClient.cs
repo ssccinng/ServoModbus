@@ -47,7 +47,7 @@ public class ServoClient
     protected IModbusSerialMaster _modbusSerialMaster;
     protected byte _slaveAddress = 0;
     public Dictionary<DIFuncType, DIInfo> DIFunTable { get; set; } = new();
-    public Dictionary<DOFuncType, int> DOFunTable { get; set; } = new();
+    public Dictionary<DOFuncType, DIInfo> DOFunTable { get; set; } = new();
     public ServoClient()
     {
     }
@@ -79,7 +79,7 @@ public class ServoClient
     }
     public async Task SetVDOAsync(int idx, DOFuncType dIFuncType, bool high = false)
     {
-        DOFunTable.TryAdd(dIFuncType, 0);
+        DOFunTable.TryAdd(dIFuncType, new DIInfo(idx, 0));
         await WriteToServoAsync(0x17, (byte)(idx * 2 + 33), (ushort)dIFuncType);
         await WriteToServoAsync(0x17, (byte)((idx * 2) + 34), (ushort)(high ? 1 : 0));
     }
