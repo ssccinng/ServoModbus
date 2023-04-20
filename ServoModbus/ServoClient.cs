@@ -294,7 +294,8 @@ public class ServoClient
         await Task.Delay(100);
         await AddVDI(DIFuncType.多段位置指令使能);
         await WaitForFunc(DOFuncType.定位完成);
-        await RemoveVDI(DIFuncType.多段位置指令使能);
+        await RemoveVDI(list1.ToArray());
+
 
 
 
@@ -312,11 +313,12 @@ public class ServoClient
         await AddVDI(DIFuncType.原点复归使能);
         await WaitForFunc(DOFuncType.定位完成);
         await RemoveVDI(DIFuncType.原点复归使能);
+        await RemoveVDI(DIFuncType.以当前位置为原点);
         await Task.Delay(100);
         await AddVDI(DIFuncType.以当前位置为原点);
     }
 
-    public async Task<bool> WaitForFunc(DOFuncType dIFuncType, int val = 1, int period = 100, int timeout = 20000)
+    public async Task<bool> WaitForFunc(DOFuncType dIFuncType, int val = 1, int period = 500, int timeout = 20000)
     {
         await Task.Delay(period);
         Stopwatch stopwatch = new();
