@@ -273,7 +273,13 @@ public class ServoClient
     // 让移动轴移动到指定位置
     public async Task MoveToAsync(int target)
     {
-        List<DIFuncType> list1 = new List<DIFuncType> { DIFuncType.多段位置指令使能 };
+        List<DIFuncType> list1 = new List<DIFuncType> { DIFuncType.多段位置指令使能, 
+            
+            DIFuncType.多段运行指令切换CM01 ,
+            DIFuncType.多段运行指令切换CM02 ,
+            DIFuncType.多段运行指令切换CM03,
+            DIFuncType.多段运行指令切换CM04 ,
+        };
         await RemoveVDI(list1.ToArray());
 
         List<DIFuncType> list = new List<DIFuncType> { };
@@ -286,7 +292,11 @@ public class ServoClient
         }
         await AddVDI(list.ToArray());
         await Task.Delay(100);
-        await AddVDI(list1.ToArray());
+        await AddVDI(DIFuncType.多段位置指令使能);
+        await WaitForFunc(DOFuncType.定位完成);
+        await RemoveVDI(DIFuncType.多段位置指令使能);
+
+
 
 
     }
@@ -298,11 +308,32 @@ public class ServoClient
     /// <returns></returns>
     public async Task ReturnZeroAsync()
     {
+        //await Task.Delay(100);
+        await AddVDI(DIFuncType.原点复归使能);
+        await WaitForFunc(DOFuncType.定位完成);
         await RemoveVDI(DIFuncType.原点复归使能);
         await Task.Delay(100);
-        await AddVDI(DIFuncType.原点复归使能);
+        await AddVDI(DIFuncType.以当前位置为原点);
     }
 
+    public async Task<bool> WaitForFunc(DOFuncType dIFuncType, int val = 1, int period = 100, int timeout = 20000)
+    {
+        await Task.Delay(period);
+        Stopwatch stopwatch = new();
+        stopwatch.Start();
+        while (true)
+        {
+            if (stopwatch.ElapsedMilliseconds > timeout)
+            {
+                return false;
+            }
+            if (DOFunTable[dIFuncType].Val == val)
+            {
+                return true;
+            }
+            await Task.Delay(10);
+        }
+    }
     /// <summary>
     /// 写入数据
     /// </summary>
