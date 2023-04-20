@@ -407,6 +407,24 @@ public class ServoClient
         await WriteToServoAsync(0x11, 00, (ushort)multiMoveMode);
     }
 
+    public async Task<ushort> ReadDoAsync()
+    {
+        var res = (await ReadServoAsync(0x17, 32, 1))[0];
+
+        for (int i = 0; i < 16; i++)
+        {
+            var dot = DOFunTable.Values.FirstOrDefault(s => s.Idx == i);
+            if  (dot != null)
+            {
+                dot.Val = (res & (1 << i)) >> (i);
+            }
+
+        }
+        // 记得加log
+        // 更新那什么 本地缓存io
+        return res;
+    }
+
 
 
 
