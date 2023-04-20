@@ -26,9 +26,9 @@ public class StringLogger : ModbusLogger
         LogAction?.Invoke(defaultInterpolatedStringHandler.ToStringAndClear().PadRight(15) + message);
     }
 }
-    public record DIInfo
+public record DIInfo
 {
-    public int Idx { get; set; }    
+    public int Idx { get; set; }
     public int Val { get; set; }
 
     public DIInfo(int idx, int val)
@@ -169,7 +169,7 @@ public class ServoClient
             ushorts1[2 * i + 1] = (ushort)h17.VDOTable.VDOInfo[i].High;
         }
         await WriteToServoAsync(0x0C, 0, ushorts);
-        await WriteToServoAsync(0x0C,33, ushorts1);
+        await WriteToServoAsync(0x0C, 33, ushorts1);
     }
 
     public void DisConnect()
@@ -264,16 +264,19 @@ public class ServoClient
     // 设置目标
     public async Task SetTargetAsync(byte idx, int pos, TargetInfo targetInfo)
     {
-        await WriteToServoAsync(0x11, (byte)(idx * 5 + 12), 
-                                                (ushort)(pos & ((1<<16) - 1)), (ushort)(pos >> 16), 
-                                                targetInfo.MaxSpeed, 
-                                                targetInfo.MaxAccTime, 
+        await WriteToServoAsync(0x11, (byte)(idx * 5 + 12),
+                                                (ushort)(pos & ((1 << 16) - 1)), (ushort)(pos >> 16),
+                                                targetInfo.MaxSpeed,
+                                                targetInfo.MaxAccTime,
                                                 0);
     }
     // 让移动轴移动到指定位置
     public async Task MoveToAsync(int target)
     {
-        List<DIFuncType> list = new List<DIFuncType> { DIFuncType.多段位置指令使能 };
+        List<DIFuncType> list1 = new List<DIFuncType> { DIFuncType.多段位置指令使能 };
+        await RemoveVDI(list1.ToArray());
+
+        List<DIFuncType> list = new List<DIFuncType> { };
         for (int i = 0; i < 4; i++)
         {
             if ((target & (1 << i)) != 0)
@@ -282,9 +285,12 @@ public class ServoClient
             }
         }
         await AddVDI(list.ToArray());
+        await Task.Delay(100);
+        await AddVDI(list1.ToArray());
+
 
     }
-    
+
 
     /// <summary>
     /// 归原
@@ -293,6 +299,7 @@ public class ServoClient
     public async Task ReturnZeroAsync()
     {
         await RemoveVDI(DIFuncType.原点复归使能);
+        await Task.Delay(100);
         await AddVDI(DIFuncType.原点复归使能);
     }
 
@@ -366,7 +373,7 @@ public class ServoClient
     {
         await WriteToServoAsync(0x11, 00, (ushort)multiMoveMode);
     }
-    
+
 
 
 
