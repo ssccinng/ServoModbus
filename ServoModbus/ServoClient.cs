@@ -292,7 +292,8 @@ public class ServoClient
     /// <returns></returns>
     public async Task ReturnZeroAsync()
     {
-
+        await RemoveVDI(DIFuncType.原点复归使能);
+        await AddVDI(DIFuncType.原点复归使能);
     }
 
     /// <summary>
