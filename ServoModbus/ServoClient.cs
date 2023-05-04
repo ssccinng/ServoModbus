@@ -48,6 +48,8 @@ public class ServoClient
     protected byte _slaveAddress = 0;
     public Dictionary<DIFuncType, DIInfo> DIFunTable { get; set; } = new();
     public Dictionary<DOFuncType, DIInfo> DOFunTable { get; set; } = new();
+
+    public Dictionary<int, int> TargetPosTable { get; set; } = new();
     public ServoClient()
     {
     }
@@ -59,7 +61,11 @@ public class ServoClient
         _serialPort.Parity = Parity.None;
         _serialPort.StopBits = StopBits.One;
     }
-
+    /// <summary>
+    /// 控制日志输出位置（未完成）
+    /// </summary>
+    /// <param name="action"></param>
+    /// <param name="loggingLevel"></param>
     public void LogTo(Action<string> action, LoggingLevel loggingLevel = LoggingLevel.Debug)
     {
         logger = new StringLogger(loggingLevel) { LogAction = action };
@@ -264,6 +270,9 @@ public class ServoClient
     // 设置目标
     public async Task SetTargetAsync(byte idx, int pos, TargetInfo targetInfo)
     {
+        TargetPosTable.TryAdd(idx, pos);
+        TargetPosTable[idx] = pos;
+        // 记录一下
         await WriteToServoAsync(0x11, (byte)(idx * 5 + 12),
                                                 (ushort)(pos & ((1 << 16) - 1)), (ushort)(pos >> 16),
                                                 targetInfo.MaxSpeed,
