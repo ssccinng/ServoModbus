@@ -2,10 +2,12 @@
 {
     public class TargetInfo
     {
-        public ushort StartSpeed { get; set; }
-        public ushort MaxSpeed { get; set; }
+        public int Pos { get; set; }
 
-        public ushort MaxAccTime { get; set; }
+        public ushort StartSpeed { get; set; } = 250;
+        public ushort MaxSpeed { get; set; } = 500;
+
+        public ushort MaxAccTime { get; set; } = 50;
         public ushort StopSpeed { get; set; } = 0;
     }
 }

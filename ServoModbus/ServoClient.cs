@@ -279,6 +279,18 @@ public class ServoClient
                                                 targetInfo.MaxAccTime,
                                                 0);
     }
+
+    public async Task SetTargetAsync(byte idx, TargetInfo targetInfo)
+    {
+        TargetPosTable.TryAdd(idx, targetInfo.Pos);
+        TargetPosTable[idx] = targetInfo.Pos;
+        // 记录一下
+        await WriteToServoAsync(0x11, (byte)(idx * 5 + 12),
+                                                (ushort)(targetInfo.Pos & ((1 << 16) - 1)), (ushort)(targetInfo.Pos >> 16),
+                                                targetInfo.MaxSpeed,
+                                                targetInfo.MaxAccTime,
+                                                0);
+    }
     // 让移动轴移动到指定位置
     public async Task MoveToAsync(int target)
     {
