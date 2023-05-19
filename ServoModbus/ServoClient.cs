@@ -446,6 +446,13 @@ public class ServoClient
         return res;
     }
 
+    public async Task ResetAlarm()
+    {
+        await AddVDI(DIFuncType.报警复位信号);
+        await Task.Delay(100);
+        await RemoveVDI(DIFuncType.报警复位信号);
+    }
+
 
 
 
