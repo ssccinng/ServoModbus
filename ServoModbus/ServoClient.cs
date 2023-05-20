@@ -259,6 +259,7 @@ public class ServoClient
 
         await WriteToServoAsync(0x03, 10, new ushort[] { 1 });
         await WriteToServoAsync(0x03, 11, new ushort[] { (ushort)(val ? 1 : 0) });
+        // todo: 这个需要实际读取！
         IsEnable = val;
     }
 
