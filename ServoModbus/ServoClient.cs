@@ -373,7 +373,6 @@ public class ServoClient
         }
         catch (Exception ex)
         {
-            throw;
             logger.Error(ex.Message);
             logger.Error(ex.StackTrace);
         }
