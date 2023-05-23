@@ -353,7 +353,10 @@ public class ServoClient
             }
             if (DOFunTable[dIFuncType].Val == val)
             {
+                await Task.Delay(200);
+                if (DOFunTable[dIFuncType].Val == val)
                 return true;
+                
             }
             await Task.Delay(10);
         }
