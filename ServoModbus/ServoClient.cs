@@ -356,7 +356,7 @@ public class ServoClient
                 await Task.Delay(200);
                 if (DOFunTable[dIFuncType].Val == val)
                 return true;
-                
+                logger.Warning("存在误判到位");
             }
             await Task.Delay(10);
         }
