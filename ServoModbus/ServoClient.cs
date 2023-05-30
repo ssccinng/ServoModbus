@@ -456,7 +456,14 @@ public class ServoClient
         await RemoveVDI(DIFuncType.报警复位信号);
     }
 
-
+    /// <summary>
+    /// 获取错误码
+    /// </summary>
+    /// <returns></returns>
+    public async Task<ushort> GetErrorCode()
+    {
+        return (await ReadServoAsync(0x31, 34, 1))[0];
+    }
 
 
 
