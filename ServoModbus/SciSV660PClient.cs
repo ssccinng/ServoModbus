@@ -63,11 +63,7 @@ public class SciSV660PClient: ServoClient
         await SetMoveType(ServoMoveType.绝对定位);
         //await SetMoveType(ServoMoveType.相对定位);
 
-        //for (byte i = 0; i < MainViewModel.Saves.TargetInfos.Length; i++)
-        //{
-        //    await SetTargetAsync(i, MainViewModel.Saves.TargetInfos[i]);
-        //}
-
+     
         //await SetTargetAsync(0, -0, new TargetInfo
         //{
         //    MaxAccTime = 50,
@@ -104,7 +100,7 @@ public class SciSV660PClient: ServoClient
         await base.SetInitParam();
     }
 
-    public override bool Connect(string ComName, byte slaveAddress = 0)
+    public override bool Connect(string ComName, byte slaveAddress = 1)
     {
         if (ComName == string.Empty)
         {

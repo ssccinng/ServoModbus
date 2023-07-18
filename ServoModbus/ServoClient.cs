@@ -128,7 +128,7 @@ public class ServoClient
         return idx.Idx;
     }
 
-    public virtual bool Connect(string ComName, byte slaveAddress = 0)
+    public virtual bool Connect(string ComName, byte slaveAddress = 1)
     {
         try
         {
