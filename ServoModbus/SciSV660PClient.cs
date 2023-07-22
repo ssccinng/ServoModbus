@@ -1,7 +1,6 @@
 ﻿using NModbus;
 using NModbus.Logging;
 using NModbus.Serial;
-using ServoModbus;
 using System;
 using System.Diagnostics;
 using System.IO.Ports;
@@ -9,9 +8,9 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
-namespace RPDelectPallet.MVVM.Model;
+namespace ServoModbus;
 
-public class SciSV660PClient: ServoClient
+public class SciSV660PClient : ServoClient
 {
     //public override async void Init()
     //{
@@ -63,7 +62,7 @@ public class SciSV660PClient: ServoClient
         await SetMoveType(ServoMoveType.绝对定位);
         //await SetMoveType(ServoMoveType.相对定位);
 
-     
+
         //await SetTargetAsync(0, -0, new TargetInfo
         //{
         //    MaxAccTime = 50,
