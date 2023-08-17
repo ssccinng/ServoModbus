@@ -8,6 +8,8 @@ using System.Runtime.CompilerServices;
 
 namespace ServoModbus;
 
+using DOInfo = DIInfo;
+
 public class StringLogger : ModbusLogger
 {
     public Action<string> LogAction { get; set; }
@@ -47,7 +49,7 @@ public class ServoClient
     protected IModbusSerialMaster _modbusSerialMaster;
     protected byte _slaveAddress = 0;
     public Dictionary<DIFuncType, DIInfo> DIFunTable { get; set; } = new();
-    public Dictionary<DOFuncType, DIInfo> DOFunTable { get; set; } = new();
+    public Dictionary<DOFuncType, DOInfo> DOFunTable { get; set; } = new();
 
     public Dictionary<int, int> TargetPosTable { get; set; } = new();
     public ServoClient()
@@ -72,7 +74,7 @@ public class ServoClient
 
     }
     /// <summary>
-    /// 设定DI功能（需重启plc）
+    /// 设定VDI功能（需重启plc）
     /// </summary>
     /// <param name="idx"></param>
     /// <param name="dIFuncType"></param>
@@ -89,6 +91,33 @@ public class ServoClient
         await WriteToServoAsync(0x17, (byte)(idx * 2 + 33), (ushort)dIFuncType);
         await WriteToServoAsync(0x17, (byte)((idx * 2) + 34), (ushort)(high ? 1 : 0));
     }
+
+    //public async Task<bool[]> Get
+
+    // TODO: 去看看参数列表
+
+    /// <summary>
+    /// 设置di
+    /// </summary>
+    /// <param name="idx"></param>
+    /// <param name="dIFuncType"></param>
+    /// <param name="high"></param>
+    /// <returns></returns>
+    public async Task SetDIAsync(int idx, DIFuncType dIFuncType, bool high = false)
+    {
+        DIFunTable.TryAdd(dIFuncType, new DIInfo(idx, 0));
+        await WriteToServoAsync(0x03, (byte)(idx * 2), (ushort)dIFuncType);
+        await WriteToServoAsync(0x03, (byte)((idx * 2) + 1), (ushort)(high ? 1 : 0));
+    }
+    public async Task SetDOAsync(int idx, DOFuncType dIFuncType, bool high = false)
+    {
+        DOFunTable.TryAdd(dIFuncType, new DIInfo(idx, 0));
+        await WriteToServoAsync(0x03, (byte)(idx * 2 + 33), (ushort)dIFuncType);
+        await WriteToServoAsync(0x03, (byte)((idx * 2) + 34), (ushort)(high ? 1 : 0));
+    }
+
+
+
     /// <summary>
     /// 没时间构思了 先用hset试一试
     /// </summary>
@@ -111,6 +140,16 @@ public class ServoClient
         await RefrshDI();
     }
 
+    public async Task<bool[]> GetVDOAsync(params DOFuncType[] dOFuncType)
+    {
+        var res = new bool[dOFuncType.Length];
+        for (int i = 0; i < dOFuncType.Length; i++)
+        {
+            res[i] = DOFunTable[dOFuncType[i]].Val == 1;
+        }
+        return res;
+    }
+
     public async Task RefrshDI()
     {
         int aa = 0;
@@ -127,6 +166,8 @@ public class ServoClient
         if (res == false) return -1;
         return idx.Idx;
     }
+
+
 
     public virtual bool Connect(string ComName, byte slaveAddress = 1)
     {
@@ -154,7 +195,7 @@ public class ServoClient
 
     }
 
-    public virtual async Task SetInitParam()
+    public virtual async Task SetInitParam(bool enable = false)
     {
         await SetVDIEnable(true);
         await SetVDOEnable(true);
@@ -185,45 +226,8 @@ public class ServoClient
         _serialPort.Close();
         _serialPort.Dispose();
     }
-    /// <summary>
-    /// 初始化
-    /// </summary>
-    /// <returns></returns>
-    //public async Task Init()
-    //{
-    //    return;
-    //    await WriteToServoAsync(0x02, 00, 1);
-    //    await WriteToServoAsync(0x03, 08, 0);
-    //    await WriteToServoAsync(0x03, 10, 0);
-    //    await WriteToServoAsync(0x05, 00, 2);
-    //    await WriteToServoAsync(0x05, 30, 1);
 
-    //    await WriteToServoAsync(0x05, 31, 1);
-    //    await WriteToServoAsync(0x05, 32, 1);
-
-    //    await WriteToServoAsync(0x0c, 09, 1);
-    //    await WriteToServoAsync(0x0c, 13, 1);
-    //    await WriteToServoAsync(0x0c, 15, 0);
-
-    //    await WriteToServoAsync(0x11, 00, 1);
-    //    await WriteToServoAsync(0x11, 01, 1);
-    //    await WriteToServoAsync(0x11, 04, 1);
-    //    await WriteToServoAsync(0x11, 05, 1);
-    //    await WriteToServoAsync(0x11, 16, 0);
-
-    //    await WriteToServoAsync(0x17, 00, 1);
-    //    await WriteToServoAsync(0x17, 02, 18);
-    //    await WriteToServoAsync(0x17, 04, 19);
-    //    await WriteToServoAsync(0x17, 06, 28);
-    //    await WriteToServoAsync(0x17, 08, 32);
-    //    await WriteToServoAsync(0x17, 10, 34);
-    //    await WriteToServoAsync(0x17, 12, 2);
-
-
-    //    //await WriteToServoAsync(0x0c, 00, 1);
-    //    //await WriteToServoAsync(0x0c, 08, 115200);
-
-    //}
+  
     /// <summary>
     /// 移动结束事件
     /// </summary>
@@ -317,11 +321,6 @@ public class ServoClient
         await AddVDI(DIFuncType.多段位置指令使能);
         await WaitForFunc(DOFuncType.定位完成);
         await RemoveVDI(list1.ToArray());
-
-
-
-
-
     }
 
 
@@ -437,6 +436,7 @@ public class ServoClient
 
         for (int i = 0; i < 16; i++)
         {
+            // Todo: 性能优化
             var dot = DOFunTable.Values.FirstOrDefault(s => s.Idx == i);
             if  (dot != null)
             {
@@ -463,6 +463,15 @@ public class ServoClient
     public async Task<ushort> GetErrorCode()
     {
         return (await ReadServoAsync(0x31, 34, 1))[0];
+    }
+    /// <summary>
+    /// 设置归原时间
+    /// </summary>
+    /// <param name="time"></param>
+    /// <returns></returns>
+    public async Task SetReturnZeroTime(ushort time)
+    {
+        await WriteToServoAsync(0x05, 35, time);
     }
 
 

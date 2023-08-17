@@ -18,11 +18,16 @@ public class SciSV660PClient : ServoClient
     //    base.Init();
     //}
 
-    public override async Task SetInitParam()
+    public override async Task SetInitParam(bool enable = false)
     {
         await RefrshDI().ConfigureAwait(false);
         // 取消使能
-        //await SetVDIAsync(0, DIFuncType.伺服使能).ConfigureAwait(false);
+
+        if (enable)
+        {
+            await SetVDIAsync(10, DIFuncType.伺服使能).ConfigureAwait(false);
+
+        }
         await SetVDIAsync(0, DIFuncType.报警复位信号, true).ConfigureAwait(false);
         await SetVDIAsync(1, DIFuncType.正向点动).ConfigureAwait(false);
         await SetVDIAsync(2, DIFuncType.反向点动).ConfigureAwait(false);
@@ -41,7 +46,7 @@ public class SciSV660PClient : ServoClient
         await WriteToServoAsync(0x05, 31, 1);
 
         // 归原时间
-        await WriteToServoAsync(0x05, 35, 60000);
+        await SetReturnZeroTime(60000);
         // 运动模式
         //await WriteToServoAsync(0x05, 02, 1000);
 
@@ -63,38 +68,6 @@ public class SciSV660PClient : ServoClient
         //await SetMoveType(ServoMoveType.相对定位);
 
 
-        //await SetTargetAsync(0, -0, new TargetInfo
-        //{
-        //    MaxAccTime = 50,
-        //    MaxSpeed = 1000,
-        //    StartSpeed = 250,
-        //    StopSpeed = 0
-        //});
-
-        //await SetTargetAsync(1, -5000, new TargetInfo
-        //{
-        //    MaxAccTime = 50,
-        //    MaxSpeed = 500,
-        //    StartSpeed = 250,
-        //    StopSpeed = 0
-        //});
-
-        //await SetTargetAsync(2, -10000, new TargetInfo
-        //{
-        //    MaxAccTime = 50,
-        //    MaxSpeed = 500,
-        //    StartSpeed = 250,
-        //    StopSpeed = 0
-        //});
-
-        //await SetTargetAsync(3, -15000, new TargetInfo
-        //{
-        //    MaxAccTime = 50,
-        //    MaxSpeed = 500,
-        //    StartSpeed = 250,
-        //    StopSpeed = 0
-        //});
-        //// 后续需要根据这个表去直接搜索功能
 
         await base.SetInitParam();
     }
