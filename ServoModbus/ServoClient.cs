@@ -180,10 +180,16 @@ public class ServoClient
 
     public void DisConnect()
     {
+        // 清除表
+
         IsConnect = false;
         _modbusSerialMaster.Dispose();
         _serialPort.Close();
         _serialPort.Dispose();
+
+        DIFunTable.Clear();
+        DOFunTable.Clear();
+        TargetPosTable.Clear();
     }
     /// <summary>
     /// 初始化
