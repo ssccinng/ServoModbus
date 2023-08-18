@@ -352,6 +352,8 @@ public class ServoClient
         stopwatch.Start();
         while (true)
         {
+            // Todo: Do表刷新机制思考
+            await ReadDoAsync();
             if (stopwatch.ElapsedMilliseconds > timeout)
             {
                 return false;
