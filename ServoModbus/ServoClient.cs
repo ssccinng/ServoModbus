@@ -168,11 +168,14 @@ public class ServoClient
     }
 
 
-
+    public string ComName { get; protected set; }
+    public byte SlaveAddress { get; protected set; }
     public virtual bool Connect(string ComName, byte slaveAddress = 1)
     {
         try
         {
+            ComName = ComName.ToLower();
+            SlaveAddress = slaveAddress;
             _slaveAddress = slaveAddress;
             _serialPort.PortName = ComName;
             factory = new ModbusFactory(logger: logger);

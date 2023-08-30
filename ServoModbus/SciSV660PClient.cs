@@ -82,6 +82,9 @@ public class SciSV660PClient : ServoClient
 
         try
         {
+            ComName = ComName.ToLower();
+            SlaveAddress = slaveAddress;
+
             logger = new StringLogger(LoggingLevel.Debug);
 
             _slaveAddress = slaveAddress;
