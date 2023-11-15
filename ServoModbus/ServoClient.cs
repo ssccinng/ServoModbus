@@ -51,6 +51,9 @@ public class ServoClient
     public Dictionary<DIFuncType, DIInfo> DIFunTable { get; set; } = new();
     public Dictionary<DOFuncType, DOInfo> DOFunTable { get; set; } = new();
 
+    public Dictionary<DIFuncType, DIInfo> RealDIFunTable { get; set; } = new();
+    public Dictionary<DOFuncType, DOInfo> RealDOFunTable { get; set; } = new();
+
     public Dictionary<int, int> TargetPosTable { get; set; } = new();
     public ServoClient()
     {
@@ -111,11 +114,15 @@ public class ServoClient
     }
     public async Task SetDOAsync(int idx, DOFuncType dIFuncType, bool high = false)
     {
-        DOFunTable.TryAdd(dIFuncType, new DIInfo(idx, 0));
+        RealDOFunTable.TryAdd(dIFuncType, new DIInfo(idx, 0));
         await WriteToServoAsync(0x03, (byte)(idx * 2 + 33), (ushort)dIFuncType);
         await WriteToServoAsync(0x03, (byte)((idx * 2) + 34), (ushort)(high ? 1 : 0));
     }
 
+    public async Task AddDO(DOFuncType dOFuncType)
+    {
+
+    }
 
 
     /// <summary>
@@ -140,6 +147,25 @@ public class ServoClient
         await RefrshDI();
     }
 
+    public async Task AddDO(params DOFuncType[] dOFuncType)
+    {
+        foreach (var item in dOFuncType)
+        {
+            RealDOFunTable[item].Val = 1;
+        }
+        await RefreshRealDO();
+
+    }
+    public async Task RemoveDO(params DOFuncType[] dOFuncType)
+    {
+        foreach (var item in dOFuncType)
+        {
+            RealDOFunTable[item].Val = 0;
+        }
+        await RefreshRealDO();
+    }
+
+
     public async Task<bool[]> GetVDOAsync(params DOFuncType[] dOFuncType)
     {
         var res = new bool[dOFuncType.Length];
@@ -160,9 +186,25 @@ public class ServoClient
         await WriteToServoAsync(0x31, 0, (ushort)aa);
     }
 
+    public async Task RefreshRealDO()
+    {
+        int aa = 0;
+        foreach (var item in RealDOFunTable.Keys)
+        {
+            aa |= (RealDOFunTable[item].Val << GetRealFuncIdx(item));
+        }
+        await WriteToServoAsync(0x31, 4, (ushort)aa);
+    }
+
     public int GetFuncIdx(DIFuncType dIFuncType)
     {
         var res = DIFunTable.TryGetValue(dIFuncType, out var idx);
+        if (res == false) return -1;
+        return idx.Idx;
+    }
+    public int GetRealFuncIdx(DOFuncType dOFuncType)
+    {
+        var res = RealDOFunTable.TryGetValue(dOFuncType, out var idx);
         if (res == false) return -1;
         return idx.Idx;
     }
