@@ -115,8 +115,8 @@ public class ServoClient
     public async Task SetDOAsync(int idx, DOFuncType dIFuncType, bool high = false)
     {
         RealDOFunTable.TryAdd(dIFuncType, new DIInfo(idx, 0));
-        await WriteToServoAsync(0x03, (byte)(idx * 2 + 33), (ushort)dIFuncType);
-        await WriteToServoAsync(0x03, (byte)((idx * 2) + 34), (ushort)(high ? 1 : 0));
+        await WriteToServoAsync(0x04, (byte)(idx * 2 ), (ushort)dIFuncType);
+        await WriteToServoAsync(0x04, (byte)((idx * 2) + 1), (ushort)(high ? 1 : 0));
     }
 
     public async Task AddDO(DOFuncType dOFuncType)
