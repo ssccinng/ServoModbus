@@ -74,6 +74,8 @@ public class SciSV660PClient : ServoClient
 
     public override bool Connect(string ComName, byte slaveAddress = 1)
     {
+        logger = new StringLogger(LoggingLevel.Debug);
+
         if (ComName == string.Empty)
         {
             logger.Warning("串口号为空");
@@ -85,7 +87,6 @@ public class SciSV660PClient : ServoClient
             ComName = ComName.ToLower();
             SlaveAddress = slaveAddress;
 
-            logger = new StringLogger(LoggingLevel.Debug);
 
             _slaveAddress = slaveAddress;
             _serialPort = new SerialPort(ComName);
